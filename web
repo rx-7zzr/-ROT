@@ -1,0 +1,80 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract BrainrotToken {
+
+    // Basic ERC-20 info
+    string public constant name = "Brainrot Token";
+    string public constant symbol = "ROT";
+    uint8 public constant decimals = 18;
+
+    uint256 public totalSupply;
+
+    // Owner address
+    address public owner;
+
+    // Balance mapping
+    mapping(address => uint256) public balanceOf;
+
+    // Allowance mapping
+    mapping(address => mapping(address => uint256)) public allowance;
+
+    // Events (ERC-20 standard)
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    constructor() {
+        owner = msg.sender;
+
+        uint256 supply = 1_000_000_000_000 * 10**uint256(decimals); // 1 trillion ROT
+        totalSupply = supply;
+        balanceOf[msg.sender] = supply;
+
+        emit Transfer(address(0), msg.sender, supply);
+    }
+
+    // Internal transfer
+    function _transfer(address from, address to, uint256 value) internal {
+        require(to != address(0), "Transfer to zero address");
+        require(balanceOf[from] >= value, "Insufficient balance");
+
+        balanceOf[from] -= value;
+        balanceOf[to] += value;
+
+        emit Transfer(from, to, value);
+    }
+
+    // Public transfer
+    function transfer(address to, uint256 value) external returns (bool) {
+        _transfer(msg.sender, to, value);
+        return true;
+    }
+
+    // Approve spender
+    function approve(address spender, uint256 value) external returns (bool) {
+        allowance[msg.sender][spender] = value;
+        emit Approval(msg.sender, spender, value);
+        return true;
+    }
+
+    // Transfer from (for exchanges, contracts, etc.)
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
+        require(allowance[from][msg.sender] >= value, "Allowance exceeded");
+        
+        allowance[from][msg.sender] -= value;
+        _transfer(from, to, value);
+        return true;
+    }
+
+    // Optional burn function
+    function burn(uint256 value) external returns (bool) {
+        require(balanceOf[msg.sender] >= value, "Not enough balance to burn");
+
+        balanceOf[msg.sender] -= value;
+        totalSupply -= value;
+
+        emit Transfer(msg.sender, address(0), value);
+        return true;
+    }
+}
+
